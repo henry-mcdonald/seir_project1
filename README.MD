@@ -7,11 +7,11 @@ User controls a 'robot' which exists in an interesting polygonal map. As an exam
 
 The user's robot is controlled with WASD -- and enemy robots will be fired by the user's laser when the enemy robot is within range of the user's laser. 
 
-The robots also have a laser, but with shorter range. So maintaining a healthy distance away from enemy robots will be key, and avoiding getting entangled with multiple of the same robots will also be key.
+The robots also have a laser, but with shorter range. So maintaining a healthy distance away from enemy robots will be key, and avoiding getting entangled with multiple robots at one time will also be key.
 
-Victory Condition: Enemy Robots are defeated
+Victory Condition: Enemy Robots are defeated (health< 0)
 
-Loss Condition: Player's Robots are defeated
+Loss Condition: Player's Robots are defeated (health < 0)
 
 Currently implemented:
 
