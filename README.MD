@@ -21,7 +21,7 @@ Currently implemented:
 Next Steps:
 
 1. WASD implemented for player-controlled robots
-1. Logic for making robots -- making the game the appropriate level of difficulty
+1. Logic for 'feeding robots into the map' -- making the game the appropriate level of difficulty
 2. Laser shooting will be animated
 3. Meaningful sprites to be displayed over boxes
 
