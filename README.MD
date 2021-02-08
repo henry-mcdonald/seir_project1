@@ -32,5 +32,9 @@ Stretch goals:
 2. Add 'helper robots' which can be given simple instructions (such as 'follow main robot'
 
 Very stretch goals:
-1. Procedural generated levels (very very stretch)
+
+1. Ability of robot to 'jump'
 2. Create instruction set for ally robots such as: 'guard this area', 'follow enemy robots', 'suicide mission', 'follow ally robots'
+
+Very Very stretch:
+1. Procedural generated levels
