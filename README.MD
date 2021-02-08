@@ -2,7 +2,7 @@ Gameplay:
 
 User controls a 'robot' which exists in an interesting polygonal map. As an example, find below -- one enemy robot within the polygonal map
 
-![View of enemy robot within game map](https://i.imgur.com/iJKxxGL.png)
+![View of enemy robot within game map](https://i.imgur.com/iJKxxGL.png?2)
 
 
 The user's robot is controlled with WASD -- and enemy robots will be fired by the user's laser when the enemy robot is within range of the user's laser. 
