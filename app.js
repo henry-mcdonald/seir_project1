@@ -83,49 +83,31 @@ class Crawler {
         this.theta = Math.PI/2;
         this.moveCounter = 0;
         this.previouslyInside = inside([this.x,this.y],scaledMapArray);
-
         crawlers.push(this)
     }
-
     render() {
         if(this.moveCounter > gracePeriod || this.moveCounter % 2 === 0){
         ctx.fillStyle = this.color;
         ctx.fillRect(this.x, this.y, this.width, this.height);
         }
       }
-
-    takeDamage(){
-
-    }
-
-    giveDamage(){
-
-    }
-
     calcIncrements(){
         this.x_increment = this.speed * Math.cos(this.theta)
         this.y_increment = this.speed * Math.sin(this.theta) 
     }
-
     move(){
         this.calcIncrements()
-
         this.x = this.x + this.x_increment
         this.y = this.y + this.y_increment
-
         this.moveCounter ++;
     }
-
     rotateClockwise(deltaTheta){
         this.theta += deltaTheta
-
     }
-
     updateInsideStatus(){
         this.previouslyInside = this.inside
         this.inside = inside([this.x,this.y], scaledMapArray)
     }
-
     renderHealthBar(){
         this.healthBarLength = this.width * (this.health/this.initialHealth)
         ctx.fillStyle = "gray"
