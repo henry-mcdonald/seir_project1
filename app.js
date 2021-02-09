@@ -12,6 +12,7 @@ canvas.setAttribute("height", getComputedStyle(canvas)["height"])
 canvas.setAttribute("width", getComputedStyle(canvas)["width"])
 
 
+//let w = 
 
 // runs to game loop with a set interval
 let gameLoopInterval = setInterval(gameLoop, 60)
@@ -21,7 +22,30 @@ let scaledMapArray
 
 crawlers = []
 
+var pressedKeys = {};
+window.onkeyup = function(e) { pressedKeys[e.key] = false; }
+window.onkeydown = function(e) { pressedKeys[e.key] = true; }
 
+
+let wDown
+let aDown
+let sDown
+let dDown
+
+let xVector
+let yVector
+
+let gameCounter = 0
+
+let healthBarOffset = -10
+let healthBarHeight = 5
+
+let gracePeriod = 30
+
+factionAttributes = {
+    "red":{lineDash:[5,15],laserOffset:0},
+    "blue":{lineDash:[], laserOffset:10}
+}
 
 function inside(point, vs) {
     // ray-casting algorithm based on
@@ -43,7 +67,7 @@ function inside(point, vs) {
 };
 
 class Crawler {
-    constructor(x,y,width, height, color, speed,damage,range,faction,shields,health,laserColor){
+    constructor(x,y,width, height, color, speed,damage,range,health){
         this.x = x;
         this.y = y;
         this.width = width
@@ -52,20 +76,22 @@ class Crawler {
         this.speed = speed;
         this.damage = damage;
         this.range = range;
-        this.faction = faction;
-        this.shields = shields;
         this.health = health;
-        this.laserColor = laserColor
+        this.initialHealth = health;
 
 
         this.theta = Math.PI/2;
         this.moveCounter = 0;
         this.previouslyInside = inside([this.x,this.y],scaledMapArray);
+
+        crawlers.push(this)
     }
 
     render() {
+        if(this.moveCounter > gracePeriod || this.moveCounter % 2 === 0){
         ctx.fillStyle = this.color;
         ctx.fillRect(this.x, this.y, this.width, this.height);
+        }
       }
 
     takeDamage(){
@@ -99,13 +125,99 @@ class Crawler {
         this.previouslyInside = this.inside
         this.inside = inside([this.x,this.y], scaledMapArray)
     }
+
+    renderHealthBar(){
+        this.healthBarLength = this.width * (this.health/this.initialHealth)
+        ctx.fillStyle = "gray"
+        ctx.fillRect(this.x, this.y + healthBarOffset, this.healthBarLength, healthBarHeight);
+    }
+}
+
+class humanControllableCrawler extends Crawler{
+    constructor(x,y,width, height, color, speed,damage,range,health){
+        super(x,y,width, height, color, speed,damage,range,health)
+
+    }
+
+    calcIncrements(){
+
+        wDown = pressedKeys["w"]
+        aDown = pressedKeys["a"]
+        sDown = pressedKeys["s"]
+        dDown = pressedKeys["d"]
+
+        xVector = 0
+        yVector = 0
+
+        if(dDown){
+            xVector += 1
+        }
+        if(aDown){
+            xVector -= 1
+        }
+        if(sDown){
+            yVector += 1
+        }
+        if(wDown){
+            yVector -= 1
+        }
+
+        
+        let d_squared = Math.pow(xVector, 2) + Math.pow(yVector, 2)
+        let d = Math.sqrt(d_squared)
+
+        if(d>0){
+        this.x_increment = (xVector / d) * this.speed
+        this.y_increment = (yVector / d) * this.speed
+        } else{
+            this.x_increment = 0
+            this.y_increment = 0
+        }
+        //console.log("xVector is" + xVector)
+
+        //console.log("d is" + d)
+
+        //console.log("x increment is " + this.x_increment)
+
+
+    }
+
+    move(){
+        this.calcIncrements()
+
+        //console.log(this.x)
+        //console.log(this.y)
+
+        this.x = this.x + this.x_increment
+        this.y = this.y + this.y_increment
+
+
+        //console.log(this.x)
+        //console.log(this.y)
+
+
+
+        this.moveCounter ++;
+    }
+
 }
 
 
+//class laserShot()
 
 
+function animateShoot(coordinate1,coordinate2,color){
+    ctx.strokeStyle = color
+    ctx.setLineDash(factionAttributes[color].lineDash);
+    ctx.lineWidth = 3;
 
-function animateShoot(){
+
+    ctx.beginPath();
+    ctx.moveTo(coordinate1[0],coordinate1[1] + factionAttributes[color].laserOffset);
+    ctx.lineTo(coordinate2[0],coordinate2[1]);
+
+    ctx.stroke();
+
 
 }
 
@@ -113,13 +225,15 @@ const coordinates = []
 // the first loop is the shooting crawler! The 2nd loop is the one being shot.
 function updateHealth(){
     for(i = 0; i<crawlers.length; i++){
+        let count_in_range = 0;
+        let min_distance = Number.POSITIVE_INFINITY
+        target_index = false;
+
         for(j = 0; j<crawlers.length; j++){
 
-            const count_in_range = 0;
-            let min_distance = Number.POSITIVE_INFINITY
-            target_index = false;
+
             
-            if(crawlers[i].faction != crawlers[j].faction){
+            if(crawlers[i].color != crawlers[j].color){
 
             first_x = crawlers[i].x
             first_y = crawlers[i].y
@@ -139,23 +253,56 @@ function updateHealth(){
                 if(d<min_distance){
                     min_distance = d
                     target_index = j
+
+                    
+
+
                 }
             
-            if(target_index !== false){ //ie there IS a target in range
-
-                ctx.setLineDash([5, 15]);
-                ctx.beginPath();
-                ctx.moveTo(crawlers[target_index].x,crawlers[target_index].y);
-                ctx.lineTo(first_x,first_y);
-                ctx.stroke();
-
-
-                crawlers[j].health -= crawlers[i].damage
-            }
+            
                 count_in_range ++
             }
 
             }
+        }
+
+        if(target_index !== false && crawlers[i].moveCounter>gracePeriod){ //ie there IS a target in range
+
+            //code to animate shot
+
+            ctx.beginPath();
+            ctx.setLineDash([5, 15]);
+
+            ctx.moveTo(crawlers[target_index].x,crawlers[target_index].y);
+
+            
+
+        
+            ctx.lineTo(first_x,first_y);
+
+            
+
+
+            ctx.stroke();
+
+
+
+            // code to update crawler health
+
+
+            crawlers[target_index].health -= crawlers[i].damage
+
+            console.log("hit!")
+
+            console.log("hello")
+
+            coordinate1 = [crawlers[target_index].x,crawlers[target_index].y]
+            coordinate2 = [crawlers[i].x,crawlers[i].y]
+
+            console.log(coordinate1)
+            console.log(coordinate2)
+
+            animateShoot(coordinate1,coordinate2,crawlers[i].color)
         }
     }
 
@@ -164,32 +311,45 @@ function updateHealth(){
 function removeDeadCrawlers(){
     for(i = 0; i < crawlers.length; i++){
         if(crawlers[i].health < 0){
-            crawlers.splice(i);
-            console.log(`crawler ${i} -- he gone!`);
+            //console.log(crawlers)
+            crawlers.splice(i,1);
+            //console.log(crawlers)
+            //console.log(`crawler ${i} -- he gone!`);
         }
     }
 
-    console.log("removeDeadCrawlers")
+    //console.log("removeDeadCrawlers")
 }
 
 
+function clearCanvas(){
+    ctx.clearRect(0, 0, canvas.width, canvas.height)
 
+}
 
 function updateCoords(){
         for(i = 0; i<crawlers.length; i++ ){
             crawlers[i].move()
         }
-        console.log("updateCoords")
+        //console.log("updateCoords")
     }
 
 function renderCrawlers(){
-    ctx.clearRect(0, 0, canvas.width, canvas.height)
 
     for(i = 0; i<crawlers.length; i++ ){
         crawlers[i].render()
     }
-    console.log("renderCrawlers")
+    //console.log("renderCrawlers")
 }
+
+
+function renderHealthBars(){
+    for(i = 0; i<crawlers.length; i++ ){
+        crawlers[i].renderHealthBar()
+    }
+    //console.log("renderCrawlers")
+}
+
 
 function adjustTrajectories(){
 
@@ -201,28 +361,13 @@ function adjustTrajectories(){
             crawlers[i].theta = - crawlers[i].theta
         }
     }
-    console.log("adjustTrajectories")
+    //console.log("adjustTrajectories")
 
 
 }
 
 
 
-
-function initializeGame(){
-    //console.log("nothing")
-
-    let a = new Crawler(0,0,20,20,"white",10)
-    let b = new Crawler(200,200,20,20,"red",10)
-
-    crawlers.push(a)
-    crawlers.push(b)
-
-    updateHealth()
-    removeDeadCrawlers()
-    updateCoords()
-    renderCrawlers()
-}
 
 
 
@@ -232,12 +377,13 @@ function initializeGame(){
 function renderMap(vs){
 
     ctx.beginPath();
+    ctx.setLineDash([]);
     
 
     let x0 = vs[0]
     let y0 = vs[0]
 
-    console.log([x0,y0])
+    //console.log([x0,y0])
 
     // ctx.moveTo(x0,y0)
 
@@ -246,7 +392,7 @@ function renderMap(vs){
         let x = vs[i][0]
         let y = vs[i][1]
 
-        console.log([x,y])
+        //console.log([x,y])
         ctx.lineTo(x,y)
 
     }
@@ -279,12 +425,81 @@ assignScale(2);
 scaledMapArray = mapArray.map(scalemapArray)
 renderMap(scaledMapArray)
 
-initializeGame();
-function gameLoop(){
-    updateHealth()
-    removeDeadCrawlers()
-    updateCoords()
-    renderCrawlers()
-    renderMap(scaledMapArray)
-    adjustTrajectories()
+let xcoord
+let ycoord
+function createNewCoords(){
+    let foundAPoint = false;
+
+    for(i = 0; i< 100; i++){
+
+        xcoord = Math.floor(Math.random()*1000)
+        ycoord = Math.floor(Math.random()*1000)
+
+        foundAPoint = inside([xcoord,ycoord],scaledMapArray) //if point is inside polygon
+        //console.log(xcoord)
+        //console.log(ycoord)
+
+        if(foundAPoint){
+            
+            return
+        } else{
+            xcoord = null
+            ycoord = null
+        }
+    }
+    
+
+
+    
+
+    
 }
+
+
+function initializeGame(){
+    ////console.log("nothing")
+
+    let b = new humanControllableCrawler(200,200,20,20,"red",20,50,300,5000)
+
+//    updateHealth()
+//    removeDeadCrawlers()
+//    updateCoords()
+//    renderCrawlers()
+}
+
+function spawnNewEnemies(freq){
+    if(gameCounter % freq === 0){
+
+    createNewCoords()
+   let g = new Crawler(xcoord,ycoord,20,20,"blue",10,50,150,1000)
+    }
+}
+
+initializeGame();
+ function gameLoop(){
+     clearCanvas()  
+    updateHealth()
+      removeDeadCrawlers()
+      updateCoords()
+      renderCrawlers()
+      renderHealthBars()
+      //renderLasers()
+      renderMap(scaledMapArray)
+      adjustTrajectories()
+      spawnNewEnemies(30)
+
+      
+      gameCounter ++
+ }
+
+//  function testGame(){
+//     ////console.log("nothing")
+
+//     let b = new humanControllableCrawler(200,200,20,20,"red",10,50)
+
+//     updateHealth()
+//     removeDeadCrawlers()
+//     updateCoords()
+//     renderCrawlers()
+// }
+// testGame();
