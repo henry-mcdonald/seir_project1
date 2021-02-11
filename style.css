@@ -25,6 +25,7 @@ html,body {
     background-color: #222;
     width: 1000px;
     height: 1000px;
+    display:none;
   }
   
   #container {
@@ -73,3 +74,18 @@ html,body {
     grid-area: btm-right;
     /* background-color: #222; */
   }
+
+  p{
+   color:red 
+  }
+  
+ul{
+  color: red;
+  text-align:center;
+  list-style-position: inside;
+
+}
+
+#endDiv{
+  display:none;
+}
