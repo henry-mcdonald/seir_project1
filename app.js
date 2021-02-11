@@ -19,7 +19,7 @@ let endTextEl = document.querySelector("#endMessage")
 //let w = 
 
 // runs to game loop with a set interval
-let gameLoopInterval = setInterval(gameLoop, 10)
+let gameLoopInterval = setInterval(gameLoop, 80)
 
 let mapArray
 let scaledMapArray
