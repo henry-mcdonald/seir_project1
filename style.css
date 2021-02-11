@@ -89,3 +89,7 @@ ul{
 #endDiv{
   display:none;
 }
+
+#endMessage{
+  font-size: 128px;
+}

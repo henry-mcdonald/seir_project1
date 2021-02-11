@@ -19,7 +19,7 @@ let endTextEl = document.querySelector("#endMessage")
 //let w = 
 
 // runs to game loop with a set interval
-let gameLoopInterval = setInterval(gameLoop, 80)
+let gameLoopInterval = setInterval(gameLoop, 10)
 
 let mapArray
 let scaledMapArray
@@ -206,7 +206,7 @@ class seekerCrawler extends Crawler{
 class humanControllableCrawler extends Crawler{
     constructor(x,y,width, height, color, speed,damage,range,health){
         super(x,y,width, height, color, speed,damage,range,health)
-        this.regen = 1
+        this.regen = 0.2
     }
 
     calcIncrements(){
@@ -547,7 +547,7 @@ function spawnNewEnemies(freq){
     if(gameCounter % freq === 0){
 
     createNewCoords()
-   let g = new Crawler(xcoord,ycoord,20,20,"blue",10,50,150,1000)
+   let g = new Crawler(xcoord,ycoord,12,12,"blue",7,50,150,1000)
 
    createNewCoords()
    let h = new seekerCrawler(xcoord,ycoord,15,15,"blue",5,50,100,1000)
