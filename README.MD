@@ -19,6 +19,6 @@ The user's robot can 'teleport' from its current point on the map to any other p
 
 Sources:
 
-    1. https://wrf.ecse.rpi.edu/Research/Short_Notes/pnpoly.html/pnpoly.html
-    2. https://github.com/substack/point-in-polygon
-    3. https://github.com/SEI-SEA-1-25/canvas-crawler
+1. https://wrf.ecse.rpi.edu/Research/Short_Notes/pnpoly.html/pnpoly.html
+2. https://github.com/substack/point-in-polygon
+3. https://github.com/SEI-SEA-1-25/canvas-crawler
