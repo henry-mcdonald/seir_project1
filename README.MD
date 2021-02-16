@@ -32,6 +32,7 @@ MVP goals:
 1. Player robot moves with WASD
 2. Enemy Robots bounce and game boundary penalizes robots who leave
 3. Lasers are animated and damage is calculated when robots are in range of one another
+4. UI with start screen/reset screen
 
 Stretch:
 
