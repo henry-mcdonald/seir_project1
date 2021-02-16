@@ -2,6 +2,8 @@
 // 1 Array of active crawlers including relevant attributes (per faction)
 // 
 
+// get DOM elements
+
 
 const movementDisplay = document.getElementById('movement')
 const canvas = document.getElementById('canvas')
@@ -16,20 +18,19 @@ let resetButtonEl = document.querySelector("#resetButton")
 let introDivEl = document.querySelector("#box")
 let endDivEl = document.querySelector("#endDiv")
 let endTextEl = document.querySelector("#endMessage")
+
+
 //let w = 
 
+
+
 // runs to game loop with a set interval
-let gameLoopInterval = setInterval(gameLoop, 80)
+
+//some Game State Vartiables
 
 let mapArray
+let innerMapArray
 let scaledMapArray
-
-let crawlers = []
-
-var pressedKeys = {};
-window.onkeyup = function(e) { pressedKeys[e.key] = false; }
-window.onkeydown = function(e) { pressedKeys[e.key] = true; }
-
 
 let wDown
 let aDown
@@ -39,6 +40,23 @@ let dDown
 let xVector
 let yVector
 
+
+let humanLocationX
+let humanLocationY
+let humanAlive
+let scoreCount
+let gameActive
+let humanCrawler
+let powerBarWidths= 50
+
+let crawlers = []
+
+var pressedKeys = {};
+window.onkeyup = function(e) { pressedKeys[e.key] = false; }
+window.onkeydown = function(e) { pressedKeys[e.key] = true; }
+
+
+
 let gameCounter = 0
 
 let enemyCounter
@@ -47,16 +65,8 @@ let enemyCounter
 let healthBarOffset = -10
 let healthBarHeight = 5
 
-let outsidePenalty = 50
 
-let gracePeriod = 30
 
-let humanLocationX
-let humanLocationY
-let humanAlive
-let scoreCount
-let gameActive
-let humanCrawler
 
 let victoryThreshold = 100
 
@@ -73,15 +83,110 @@ let crawlerObject = {
     'blue': [],
     'red': []
 }
+let frameRate = 10 // in ms
+
+frameRate = frameRate / 1000 // convert to s
+
+let outsidePenalty = Math.floor(200 * frameRate)
+
+
+let gracePeriod = Math.floor(3.5/frameRate) // gives a 2s grace period
+
+
+ let gameLoopInterval = setInterval(gameLoop, frameRate)
+
+let teleportThreshold = 5 / frameRate
+let bombThreshold = 60 / frameRate
+
+//mapArray = [[50,250],[350,350],[450,475],[500,50],[50,50],[10,10],[50,250]]
+mapArray = [[0,0],[1,0],[1,5],[3,5],[3,3],[2,3],[2,1],[6,1],[6,3],[5,3],[5,5],[7,5],[7,7],[9,7],[9,9],[7,9],[7,11],[5,11],[5,13],[3,13],[3,11],
+[4,11],[4,10],[3,10],[3,9],[2,9],[2,8],[0,8],[0,0]]
+
+innerMapArray = [];
+innerMapArray.push([[1,6],[2,6],[2,7],[1,7],[1,6]])
+innerMapArray.push([[3,6],[4,6],[4,7],[3,7],[3,6]])
+innerMapArray.push([[5,6],[6,6],[6,7],[5,7],[5,6]])
+innerMapArray.push([[5,8],[6,8],[6,9],[5,9],[5,8]])
+
+
+
+let scale = 60;
+let xOffset = 150
+let yOffset = 50
+
+function assignScale(scaleInput){
+    scale = scaleInput
+}
+
+function scaleMapArray(pointToScale){
+    scaled1 = pointToScale[0] * scale + xOffset
+    scaled2 = pointToScale[1] * scale + yOffset
+
+
+    return([scaled1,scaled2])
+}
+
+assignScale(scale);
+scaledMapArray = mapArray.map(scaleMapArray)
+
+let scaledInnerMaps = [];
+for(i=0;i<innerMapArray.length;i++){
+    let scaledInnerMap = innerMapArray[i].map(scaleMapArray)
+    scaledInnerMaps.push(scaledInnerMap)
+}
+
+let mapObject = {
+    outerMap : scaledMapArray,
+    innerMaps: scaledInnerMaps
+
+}
+
+function renderMap(vs){
+
+    ctx.beginPath();
+    ctx.setLineDash([]);
+    
+
+    let x0 = vs[0]
+    let y0 = vs[0]
+
+
+    // ctx.moveTo(x0,y0)
+
+    for(i=0;i<vs.length;i++){
+
+        let x = vs[i][0] 
+        let y = vs[i][1]
+
+        ctx.lineTo(x,y)
+
+    }
+
+    // ctx.lineTo(x0,y0)
+
+    ctx.strokeStyle = "red";
+    ctx.lineWidth = 1;
+    ctx.stroke();
+
+}
+
+function renderAllMaps(){
+    renderMap(mapObject.outerMap)
+    for(let map_counter = 0; map_counter< mapObject.innerMaps.length;map_counter++){
+        renderMap(mapObject.innerMaps[map_counter])
+
+    }
+}
+
+//renderMap(scaledMapArray)
+
 
 
 
 function inside(point, vs) {
     // ray-casting algorithm based on
     // https://wrf.ecse.rpi.edu/Research/Short_Notes/pnpoly.html/pnpoly.html
-    
     var x = point[0], y = point[1];
-    
     var inside = false;
     for (var i = 0, j = vs.length - 1; i < vs.length; j = i++) {
         var xi = vs[i][0], yi = vs[i][1];
@@ -91,9 +196,10 @@ function inside(point, vs) {
             && (x < (xj - xi) * (y - yi) / (yj - yi) + xi);
         if (intersect) inside = !inside;
     }
-    
     return inside;
 };
+
+
 
 
 function crawlerInside(crawler, vs){
@@ -110,8 +216,26 @@ function crawlerInside(crawler, vs){
     return(inside1 && inside2 && inside3 && inside4)
 }
 
+function crawlerInsideButNotOutside(crawler,mapObject){
+    let crawlerInsideBigMap = crawlerInside(crawler, mapObject.outerMap)
+    if(crawlerInsideBigMap){
+        for( i = 0 ; i < mapObject.innerMaps.length;i++){
+            let crawlerInsideSmallMap = crawlerInside(crawler,mapObject.innerMaps[i])
+            if(crawlerInsideSmallMap){
+                return(false)
+            }
+        }
+        return(true)
+    } else{
+        return(false)
+    }
+
+}
+
 function teleportPlayer(event){
-    console.log(event)
+
+    humanCrawler.tryToTeleport(event.offsetX,event.offsetY)
+
 }
 
 class Crawler {
@@ -121,8 +245,8 @@ class Crawler {
         this.width = width
         this.height = height
         this.color = color
-        this.speed = speed;
-        this.damage = damage;
+        this.speed = .0001* speed / frameRate;
+        this.damage = (damage * 10) * frameRate;
         this.range = range;
         this.health = health;
         this.initialHealth = health;
@@ -148,13 +272,14 @@ class Crawler {
         this.x = this.x + this.x_increment
         this.y = this.y + this.y_increment
         this.moveCounter ++;
+        this.teleportCounter ++;
     }
     rotateClockwise(deltaTheta){
         this.theta += deltaTheta
     }
-    updateInsideStatus(){
+    updateInsideStatus(mapObject){
         this.previouslyInside = this.inside
-        this.inside = crawlerInside(this, scaledMapArray)
+        this.inside = crawlerInsideButNotOutside(this,mapObject)
 
         if(this.previouslyInside === false && this.inside === false){
             this.health -= outsidePenalty
@@ -165,6 +290,8 @@ class Crawler {
         ctx.fillStyle = "gray"
         ctx.fillRect(this.x, this.y + healthBarOffset, this.healthBarLength, healthBarHeight);
     }
+
+
 }
 
 function deleteCrawler(){
@@ -201,12 +328,18 @@ class seekerCrawler extends Crawler{
         this.y = this.y + this.y_increment
         this.moveCounter ++;
     }
+
+
+
+
 }
 
 class humanControllableCrawler extends Crawler{
     constructor(x,y,width, height, color, speed,damage,range,health){
         super(x,y,width, height, color, speed,damage,range,health)
-        this.regen = 0.2
+        this.regen = 50
+        this.teleportCounter = teleportThreshold
+
     }
 
     calcIncrements(){
@@ -261,10 +394,42 @@ class humanControllableCrawler extends Crawler{
 
 
         this.moveCounter ++;
+        this.teleportCounter ++ ;
 
         humanAlive = this.health > 0
 
-        this.health += this.regen
+        if(this.health<this.initialHealth){
+        this.health += this.regen * frameRate
+        }
+
+    }
+    renderPowerBars(){
+        this.powerBarLength = (50 * Math.min(this.teleportCounter,teleportThreshold)) /teleportThreshold
+        console.log(this.teleportCounter)
+
+        console.log(this.powerBarLength)
+        ctx.fillStyle = "yellow"
+        ctx.fillRect(0,20, this.powerBarLength, 20);
+        ctx.fillStyle = "gray"
+        ctx.fillRect(50,20,5,20)
+
+
+
+
+
+    }
+
+
+
+    tryToTeleport(x,y){
+
+        if(this.teleportCounter >= teleportThreshold){
+        this.x = x
+        this.y =y
+        this.teleportCounter = 0
+        }
+        
+
     }
     
 
@@ -293,19 +458,13 @@ function animateShoot(coordinate1,coordinate2,color){
 const coordinates = []
 // the first loop is the shooting crawler! The 2nd loop is the one being shot.
 function updateHealth(){
-    for(i = 0; i<crawlers.length; i++){
-        let count_in_range = 0;
         let min_distance = Number.POSITIVE_INFINITY
         target_index = false;
-
         for(j = 0; j<crawlers.length; j++){
+            if(crawlers[0].color != crawlers[j].color){
 
-
-            
-            if(crawlers[i].color != crawlers[j].color){
-
-            first_x = crawlers[i].x
-            first_y = crawlers[i].y
+            first_x = crawlers[0].x
+            first_y = crawlers[0].y
 
             second_x = crawlers[j].x
             second_y = crawlers[j].y
@@ -315,61 +474,35 @@ function updateHealth(){
             
             var d = Math.sqrt( a*a + b*b );
 
-            range = crawlers[i].range
+            range = crawlers[0].range
+            let range_2 = crawlers[j].range
 
             if(d<range) {
-
                 if(d<min_distance){
                     min_distance = d
                     target_index = j
-
-                    
-
-
                 }
-            
-            
-                count_in_range ++
             }
+
+            if(d<range_2 && crawlers[j].moveCounter>gracePeriod){
+
+                crawlers[0].health -= crawlers[j].damage
+                coordinate1 = [crawlers[j].x,crawlers[j].y]
+                coordinate2 = [crawlers[0].x,crawlers[0].y]
+                animateShoot(coordinate1,coordinate2,crawlers[j].color)
+
+            }
+
 
             }
         }
-
-        if(target_index !== false && crawlers[i].moveCounter>gracePeriod){ //ie there IS a target in range
-
-            //code to animate shot
-
-            ctx.beginPath();
-            ctx.setLineDash([5, 15]);
-
-            ctx.moveTo(crawlers[target_index].x,crawlers[target_index].y);
-
-            
-
-        
-            ctx.lineTo(first_x,first_y);
-
-            
-
-
-            ctx.stroke();
-
-
-
-            // code to update crawler health
-
-
-            crawlers[target_index].health -= crawlers[i].damage
-
-
+        if(target_index !== false && crawlers[0].moveCounter>gracePeriod){ //ie there IS a target in range
+            crawlers[target_index].health -= crawlers[0].damage
             coordinate1 = [crawlers[target_index].x,crawlers[target_index].y]
-            coordinate2 = [crawlers[i].x,crawlers[i].y]
-
-
-
-            animateShoot(coordinate1,coordinate2,crawlers[i].color)
+            coordinate2 = [crawlers[0].x,crawlers[0].y]
+            animateShoot(coordinate1,coordinate2,crawlers[0].color)
+            
         }
-    }
 
 }
 
@@ -419,14 +552,16 @@ function renderHealthBars(){
 
 function adjustTrajectories(){
 
-    for(i = 0; i<crawlers.length; i++ ){
-        crawlers[i].updateInsideStatus(scalemapArray)
-        let checkIfInside = crawlers[i].inside
-        let checkIfPreviouslyInside = crawlers[i].previouslyInside
+    for(k = 0; k<crawlers.length; k++ ){
+        crawlers[k].updateInsideStatus(mapObject)
+
+        let checkIfInside = crawlers[k].inside
+        let checkIfPreviouslyInside = crawlers[k].previouslyInside
         if(checkIfInside === false && checkIfPreviouslyInside === true){
-            crawlers[i].theta = crawlers[i].theta + Math.PI
+            crawlers[k].theta = crawlers[k].theta + Math.PI
         }
     }
+
 
 
 }
@@ -439,58 +574,9 @@ function adjustTrajectories(){
 let fudgeFactor = 1.1
 
 
-function renderMap(vs){
-
-    ctx.beginPath();
-    ctx.setLineDash([]);
-    
-
-    let x0 = vs[0]
-    let y0 = vs[0]
 
 
-    // ctx.moveTo(x0,y0)
 
-    for(i=0;i<vs.length;i++){
-
-        let x = vs[i][0] 
-        let y = vs[i][1]
-
-        ctx.lineTo(x,y)
-
-    }
-
-    // ctx.lineTo(x0,y0)
-
-    ctx.strokeStyle = "red";
-    ctx.lineWidth = 1;
-    ctx.stroke();
-
-}
-
-
-//mapArray = [[50,250],[350,350],[450,475],[500,50],[50,50],[10,10],[50,250]]
-mapArray = [[0,0],[1,0],[1,5],[3,5],[3,3],[2,3],[2,1],[6,1],[6,3],[5,3],[5,5],[7,5],[7,7],[9,7],[9,9],[7,9],[7,11],[5,11],[5,13],[3,13],[3,11],
-[4,11],[4,10],[3,10],[3,9],[2,9],[2,8],[0,8],[0,0]]
-
-let scale = 60;
-let xOffset = 150
-let yOffset = 50
-
-function assignScale(scaleInput){
-    scale = scaleInput
-}
-
-function scalemapArray(pointToScale){
-    scaled1 = pointToScale[0] * scale + xOffset
-    scaled2 = pointToScale[1] * scale + yOffset
-
-    return([scaled1,scaled2])
-}
-
-assignScale(scale);
-scaledMapArray = mapArray.map(scalemapArray)
-renderMap(scaledMapArray)
 
 let xcoord
 let ycoord
@@ -527,7 +613,7 @@ function initializeGame(){
     canvas.style.display = 'initial'
     scoreCounterEl.innerText = 'Current Score is 0'
     crawlers = [];
-    humanCrawler = new humanControllableCrawler(170,200,20,20,"red",20,50,300,5000)
+    humanCrawler = new humanControllableCrawler(170,200,20,20,"red",160,50,300,5000)
     scoreCount = 0
     gameActive = true
     introDivEl.style.display = 'none'
@@ -547,10 +633,10 @@ function spawnNewEnemies(freq){
     if(gameCounter % freq === 0){
 
     createNewCoords()
-   let g = new Crawler(xcoord,ycoord,12,12,"blue",7,50,150,1000)
+   let g = new Crawler(xcoord,ycoord,15,15,"blue",40,50,150,1000)
 
    createNewCoords()
-   let h = new seekerCrawler(xcoord,ycoord,15,15,"blue",5,50,100,1000)
+   let h = new seekerCrawler(xcoord,ycoord,10,10,"blue",30,50,100,1000)
     }
 }
 
@@ -583,10 +669,10 @@ function checkForEnd(){
       updateCoords()
       renderCrawlers()
       renderHealthBars()
-      //renderLasers()
-      renderMap(scaledMapArray)
+      humanCrawler.renderPowerBars()
+      renderAllMaps()
       adjustTrajectories()
-      spawnNewEnemies(30)
+      spawnNewEnemies(240)
       checkForEnd()
     }
       
