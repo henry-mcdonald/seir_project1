@@ -1,6 +1,6 @@
 Gameplay:
 
-User controls a 'robot' which exists in an interesting polygonal map. As an example, find below -- one enemy robot within the polygonal map, and one player-controlled robot.
+User controls a 'robot' which exists within a map and faces off against enemy robots. Leaving this map will incur damage. 
 
 ![View of enemy robot within game map](https://i.imgur.com/iJKxxGL.png?2)
 
