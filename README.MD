@@ -9,7 +9,7 @@ Game where player controls a robot with WASD and faces off against enemy robots
 
 ## User Stories
 
-User controls a 'robot' which exists within a map and faces off against enemy robots. Leaving this map will incur damage. 
+1. User controls a 'robot' which exists within a map and faces off against enemy robots. Leaving this map will incur damage. 
 
 
 1. The user's robot is controlled with WASD -- and enemy robots will be fired by the user's laser when the enemy robot is within range of the user's laser. 
@@ -31,6 +31,7 @@ MVP goals:
 
 1. Player robot moves with WASD
 2. Enemy Robots bounce and game boundary penalizes robots who leave
+3. Lasers are animated and damage is calculated
 
 Stretch:
 
