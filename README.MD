@@ -1,8 +1,15 @@
-Gameplay:
+#Overview
 
-User controls a 'robot' which exists within a map and faces off against enemy robots. Leaving this map will incur damage. 
+Game where player controls a robot with WASD and faces off against enemy robots
+
+##Screenshot: 
 
 ![View of enemy robot within game map](https://i.imgur.com/xSX8XPX.png)
+
+
+##User Stories
+
+User controls a 'robot' which exists within a map and faces off against enemy robots. Leaving this map will incur damage. 
 
 
 The user's robot is controlled with WASD -- and enemy robots will be fired by the user's laser when the enemy robot is within range of the user's laser. 
