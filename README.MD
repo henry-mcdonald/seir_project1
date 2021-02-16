@@ -22,3 +22,21 @@ Sources:
 1. https://wrf.ecse.rpi.edu/Research/Short_Notes/pnpoly.html/pnpoly.html
 2. https://github.com/substack/point-in-polygon
 3. https://github.com/SEI-SEA-1-25/canvas-crawler
+
+
+MVP goals:
+
+1. Player robot moves with WASD
+2. Enemy Robots bounce and game boundary penalizes robots who leave
+
+Stretch:
+
+1. Make map with multiple polygons
+2. Rudimentary 'AI'
+3. Teleport option for player
+
+Next Steps:
+
+3. Screen that can scroll so that the map can be larger than the display
+1. More complex 'AI' movement -- swarm, path following, etc. (specifics to be elaborated further)
+2. Additional weapon option for player robot (chain-reaction bomb)
